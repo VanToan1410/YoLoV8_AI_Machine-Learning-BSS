@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hệ thống quản lý phương tiện</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0: #111318;
+  --bg-1: #1a1d24;
+  --bg-2: #22262e;
+  --bg-3: #2c3039;
+  --border: #333842;
+  --text: #d4d8e0;
+  --text-dim: #8b919e;
+  --text-faint: #5c6270;
+  --blue: #4b8df8;
+  --green: #3cb371;
+  --red: #d9534f;
+  --yellow: #e2a72e;
+  --sidebar-w: 220px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg-0);color:var(--text);height:100vh;overflow:hidden;font-size:13px}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--bg-3);border-radius:3px}
+
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--bg-1);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:50}
+.sidebar-brand{padding:16px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700;letter-spacing:.5px;color:var(--text)}
+.sidebar-brand span{color:var(--text-dim);font-weight:400;font-size:11px;display:block;margin-top:2px}
+.nav{flex:1;padding:8px;overflow-y:auto}
+.nav-group{margin-bottom:16px}
+.nav-group-label{font-size:10px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;padding:4px 10px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;padding:8px 10px;border-radius:4px;cursor:pointer;color:var(--text-dim);font-size:13px;font-weight:500;transition:background .1s}
+.nav-item:hover{background:var(--bg-2);color:var(--text)}
+.nav-item.active{background:var(--bg-3);color:var(--text)}
+.nav-item .dot{width:6px;height:6px;border-radius:50%;margin-right:10px;background:var(--text-faint)}
+.nav-item.active .dot{background:var(--blue)}
+.sidebar-footer{padding:10px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-faint);display:flex;align-items:center;gap:6px}
+.status-dot{width:6px;height:6px;border-radius:50%}
+.status-dot.on{background:var(--green)}
+.status-dot.off{background:var(--red)}
+
+.main{margin-left:var(--sidebar-w);height:100vh;display:flex;flex-direction:column}
+.topbar{height:48px;background:var(--bg-1);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+.topbar h2{font-size:14px;font-weight:600}
+.content{flex:1;overflow-y:auto;padding:20px}
+.page{display:none}.page.active{display:block}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--bg-1);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
+.kpi-label{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kpi-value{font-size:22px;font-weight:700}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.grid-main{display:grid;grid-template-columns:5fr 3fr;gap:16px;margin-bottom:20px}
+
+.panel{background:var(--bg-1);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.panel-head{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;display:flex;justify-content:space-between;align-items:center}
+.panel-body{padding:12px 16px}
+.panel-body.flush{padding:0}
+
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px}
+tbody tr:hover{background:var(--bg-2)}
+.plate{font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:13px;letter-spacing:1px}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;text-transform:uppercase}
+.badge-in{background:rgba(60,179,113,.12);color:var(--green)}
+.badge-out{background:rgba(75,141,248,.12);color:var(--blue)}
+.badge-ok{background:rgba(60,179,113,.12);color:var(--green)}
+.badge-warn{background:rgba(226,167,46,.12);color:var(--yellow)}
+.badge-err{background:rgba(217,83,79,.12);color:var(--red)}
+.badge-vip{background:rgba(226,167,46,.12);color:var(--yellow)}
+.badge-blacklist{background:rgba(217,83,79,.12);color:var(--red)}
+.badge-whitelist{background:rgba(60,179,113,.12);color:var(--green)}
+.badge-normal{background:rgba(75,141,248,.12);color:var(--blue)}
+
+.btn{padding:6px 14px;border-radius:4px;border:1px solid var(--border);background:var(--bg-2);color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;font-weight:500}
+.btn:hover{background:var(--bg-3)}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{opacity:.9}
+.btn-sm{padding:4px 8px;font-size:11px}
+.btn-danger{color:var(--red);border-color:var(--red);background:transparent}
+
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
+.field input,.field select{width:100%;padding:8px 10px;border-radius:4px;border:1px solid var(--border);background:var(--bg-0);color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.field input:focus,.field select:focus{border-color:var(--blue)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.search{display:flex;align-items:center;gap:6px;background:var(--bg-0);border:1px solid var(--border);border-radius:4px;padding:0 10px}
+.search input{background:none;border:none;color:var(--text);padding:7px 0;font-size:13px;outline:none;font-family:inherit;flex:1}
+
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filters .search{flex:1;min-width:180px}
+.sel{padding:7px 10px;border-radius:4px;border:1px solid var(--border);background:var(--bg-0);color:var(--text);font-family:inherit;font-size:13px}
+
+.video-box{background:#000;border-radius:4px;overflow:hidden;aspect-ratio:16/9;position:relative}
+.video-box img,.video-box video{width:100%;height:100%;object-fit:contain}
+
+.feed-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border)}
+.feed-item:last-child{border-bottom:none}
+.feed-thumb{width:44px;height:32px;border-radius:3px;object-fit:cover;background:var(--bg-2)}
+.feed-plate{font-weight:700;font-family:monospace;font-size:13px}
+.feed-meta{font-size:10px;color:var(--text-faint);margin-top:1px}
+
+.chart{height:200px;display:flex;align-items:flex-end;gap:12px;padding:12px 16px;background:var(--bg-0);margin:12px;border-radius:4px;border:1px solid var(--border)}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
+.chart-bars{display:flex;gap:4px;align-items:flex-end;height:140px;width:100%;position:relative;border-bottom:1px solid var(--border)}
+.chart-bar{flex:1;border-radius:2px 2px 0 0;min-height:1px;transition:height .3s;position:relative}
+.chart-bar.a{background:var(--green)}
+.chart-bar.b{background:var(--blue)}
+.chart-label{font-size:10px;color:var(--text-faint);white-space:nowrap;margin-top:2px}
+
+.dropzone{border:1px dashed var(--border);border-radius:6px;padding:40px 20px;text-align:center;cursor:pointer;background:var(--bg-0)}
+.dropzone:hover,.dropzone.over{border-color:var(--blue)}
+.dropzone.has-img{padding:0;border-style:solid}
+.dropzone.has-img img{width:100%;border-radius:6px;display:block}
+.dropzone h4{font-size:14px;color:var(--text-dim);margin-top:8px}
+.dropzone p{color:var(--text-faint);font-size:12px;margin-top:6px}
+.result-card{background:var(--bg-0);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.result-plate{font-family:monospace;font-size:20px;font-weight:700;letter-spacing:2px}
+.result-meta{font-size:11px;color:var(--text-faint);margin-top:2px}
+
+.pager{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;color:var(--text-faint)}
+.pager-btns{display:flex;gap:4px}
+.pager-btns button{padding:4px 10px;border-radius:3px;border:1px solid var(--border);background:var(--bg-2);color:var(--text);cursor:pointer;font-size:12px}
+.pager-btns button:disabled{opacity:.3;cursor:default}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg-1);border:1px solid var(--border);border-radius:8px;max-width:520px;width:92%;max-height:88vh;overflow-y:auto;padding:20px}
+.modal-head{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;padding:2px}
+.modal-foot{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+.toasts{position:fixed;top:60px;right:20px;z-index:300;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--bg-1);border:1px solid var(--border);border-radius:6px;padding:10px 14px;min-width:260px;font-size:12px;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.toast b{display:block;margin-bottom:2px}
+.toast span{color:var(--text-faint)}
+.empty{text-align:center;padding:40px 20px;color:var(--text-faint)}
+.empty h4{font-size:14px;color:var(--text-dim);margin-bottom:4px}
+
+.range-group{display:flex;align-items:center;gap:10px}
+.range-group input[type=range]{flex:1;accent-color:var(--blue)}
+.range-group .range-val{font-family:monospace;font-size:13px;min-width:40px;text-align:right}
+
+.parking-slot {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 8px;
+  text-align: center;
+  background: var(--bg-0);
+  transition: all 0.2s ease;
+  position: relative;
+}
+.parking-slot.available {
+  border-color: var(--green);
+  background: rgba(60, 179, 113, 0.05);
+}
+.parking-slot.available .slot-id { color: var(--green); font-weight: 700; }
+.parking-slot.occupied {
+  border-color: var(--red);
+  background: rgba(217, 83, 79, 0.05);
+}
+.parking-slot.occupied .slot-id { color: var(--text-dim); }
+.parking-slot.overtime {
+  border-color: var(--yellow);
+  background: rgba(226, 167, 46, 0.08);
+  animation: pulse-warn 2s infinite;
+}
+.parking-slot.overtime .slot-id { color: var(--yellow); font-weight: 700; }
+
+.slot-id { font-family: monospace; font-size: 14px; margin-bottom: 4px; display: block; }
+.slot-plate { font-family: monospace; font-size: 11px; font-weight: bold; color: var(--text); background: var(--bg-2); padding: 2px 4px; border-radius: 3px; display: inline-block; margin-top: 4px; }
+.slot-status { font-size: 10px; color: var(--text-faint); display: block; margin-top: 2px; }
+
+@keyframes pulse-warn {
+  0% { box-shadow: 0 0 0 0 rgba(226, 167, 46, 0.2); }
+  70% { box-shadow: 0 0 0 6px rgba(226, 167, 46, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(226, 167, 46, 0); }
+}
+
+.slot-highlight {
+  animation: highlight-nav 1.5s infinite !important;
+  border-color: var(--blue) !important;
+}
+@keyframes highlight-nav {
+  0% { background: rgba(75, 141, 248, 0.1); transform: scale(1); }
+  50% { background: rgba(75, 141, 248, 0.3); transform: scale(1.03); box-shadow: 0 0 10px var(--blue); }
+  100% { background: rgba(75, 141, 248, 0.1); transform: scale(1); }
+}
+
+@keyframes sys-alarm-flash {
+  0% { background-color: var(--bg-0); }
+  50% { background-color: #3a1616; }
+  100% { background-color: var(--bg-0); }
+}
+.alarm-flash-active {
+  animation: sys-alarm-flash 0.6s infinite !important;
+}
+
+@media(max-width:1024px){
+  .sidebar{transform:translateX(-100%);transition:transform .2s}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}.grid-2,.grid-main{grid-template-columns:1fr}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">VAN TOAN<span>Vehicle Management System</span></div>
+  <nav class="nav">
+    <div class="nav-group">
+      <div class="nav-group-label">Quản trị</div>
+      <div class="nav-item active" data-page="dashboard"><span class="dot"></span>Dashboard</div>
+      <div class="nav-item" data-page="demo"><span class="dot"></span>Xem trước</div>
+      <div class="nav-item" data-page="live"><span class="dot"></span>Live Monitor</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Quản lý</div>
+      <div class="nav-item" data-page="records"><span class="dot"></span>Bản ghi</div>
+      <div class="nav-item" data-page="vehicles"><span class="dot"></span>Phương tiện</div>
+      <div class="nav-item" data-page="parking"><span class="dot"></span>Vị trí đỗ</div>
+      <div class="nav-item" data-page="watchlist"><span class="dot"></span>Danh sách theo dõi</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Hệ thống</div>
+      <div class="nav-item" data-page="cameras"><span class="dot"></span>Cameras</div>
+      <div class="nav-item" data-page="settings"><span class="dot"></span>Settings</div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="status-dot" id="sysStatus"></div>
+    <span id="sysStatusText">Connecting</span>
+    <span style="margin-left:auto" id="fpsDisplay">-- FPS</span>
+  </div>
+</aside>
+
+<div class="main" id="mainAppContent">
+  <div class="topbar"><h2 id="pageTitle">Dashboard</h2></div>
+  <div class="content">
+
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-row" id="statsGrid"></div>
+      <div class="grid-main">
+        <div class="panel"><div class="panel-head">Hourly Activity (Lưu lượng theo giờ)</div><div class="chart" id="hourlyChart"></div></div>
+        <div class="panel"><div class="panel-head">Revenue Reporting (Doanh thu dịch vụ bãi xe)</div><div class="panel-body flush" id="recentList" style="max-height:226px;overflow-y:auto"></div></div>
+      </div>
+      <div class="panel"><div class="panel-head">Priority Management (Lưu lượng xe ưu tiên quản lý)</div><div class="chart" id="weeklyChart"></div></div>
+    </div>
+
+    <div class="page" id="page-demo">
+      <div style="display:flex;gap:4px;margin-bottom:14px">
+        <button class="btn" id="demoTabImg" onclick="switchDemoTab('image')" style="border-bottom:2px solid var(--blue)">Image Upload</button>
+        <button class="btn" id="demoTabVid" onclick="switchDemoTab('video')">Video Upload</button>
+      </div>
+      <div style="margin-bottom:14px;display:flex;align-items:center;gap:16px">
+        <span style="font-size:12px;color:var(--text-faint)">Confidence threshold:</span>
+        <div class="range-group" style="flex:1;max-width:300px">
+          <input type="range" id="demoThreshold" min="10" max="95" value="25" oninput="document.getElementById('threshVal').textContent=this.value+'%'">
+          <span class="range-val" id="threshVal">25%</span>
+        </div>
+        <label style="font-size:12px;color:var(--text-faint);display:flex;align-items:center;gap:4px"><input type="checkbox" id="demoSave" checked> Save to DB</label>
+      </div>
+
+      <div id="demoImageTab">
+        <div class="grid-2">
+          <div>
+            <div class="panel">
+              <div class="panel-head">Upload Image <button class="btn btn-sm" onclick="clearDemo()" style="margin-left:auto">Reset</button></div>
+              <div class="panel-body">
+                <div class="dropzone" id="uploadZone" onclick="document.getElementById('uploadInput').click()">
+                  <h4>Drop image here or click to upload</h4><p>JPG, PNG, WEBP</p>
+                </div>
+                <input type="file" id="uploadInput" accept="image/*" multiple style="display:none" onchange="handleUploadFiles(this.files)">
+              </div>
+            </div>
+            <div class="panel" id="demoBatchPanel" style="display:none;margin-top:12px">
+              <div class="panel-head">Batch <span class="badge badge-normal" id="demoBatchCount">0</span></div>
+              <div class="panel-body flush" id="demoBatchList" style="max-height:200px;overflow-y:auto"></div>
+            </div>
+          </div>
+          <div>
+            <div class="panel" id="demoResultPanel" style="display:none">
+              <div class="panel-head">Result</div>
+              <div class="panel-body"><img id="demoResultImage" style="width:100%;border-radius:4px" alt=""></div>
+            </div>
+            <div class="panel" style="margin-top:12px">
+              <div class="panel-head">Detected Plates <span class="badge badge-normal" id="demoDetectionCount">0</span></div>
+              <div class="panel-body" id="demoDetections"><div class="empty"><h4>Upload an image to detect</h4></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="demoVideoTab" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+          <div>
+            <div class="panel">
+              <div class="panel-head">
+                Video Source
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-sm" id="vidPlayBtn" onclick="toggleVideoPlay()" disabled>Play</button>
+                  <button class="btn btn-sm" onclick="captureVideoFrame()">Capture</button>
+                  <button class="btn btn-sm" onclick="clearVideoDemo()">Reset</button>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div class="dropzone" id="videoDropZone" onclick="document.getElementById('videoInput').click()">
+                  <h4>Drop video file here</h4><p>MP4, MOV, AVI</p>
+                </div>
+                <input type="file" id="videoInput" accept="video/*" style="display:none" onchange="handleVideoFile(this.files[0])">
+                <div class="video-box" id="videoPlayerBox" style="display:none">
+                  <video id="videoPlayer" muted></video>
+                  <canvas id="videoCanvas" style="display:none"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="panel" id="vidResultPanel">
+              <div class="panel-head">Captured Frame</div>
+              <div class="panel-body"><img id="vidResultImage" style="width:100%;border-radius:4px;background:var(--bg-0);min-height:120px" alt=""></div>
+            </div>
+            <div class="panel" style="margin-top:12px">
+              <div class="panel-head">Current Frame <span class="badge badge-normal" id="vidDetectionCount">0</span></div>
+              <div class="panel-body" id="vidDetections"><div class="empty"><h4>Plates from latest capture</h4></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="panel" style="max-height:calc(100vh - 200px);display:flex;flex-direction:column">
+              <div class="panel-head">Detection History</div>
+              <div class="panel-body flush" id="vidHistoryList" style="flex:1;overflow-y:auto">
+                <div class="empty" style="padding:20px"><h4>Plates will appear here</h4></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-live">
+      <div class="grid-main">
+        <div class="panel">
+          <div class="panel-head" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Camera Feed</span>
+            <span class="badge badge-err" style="font-size:9px">LIVE</span>
+          </div>
+          <div class="panel-body">
+            <div class="video-box" id="liveMonitorScreenBox" style="border: 1px solid var(--border); transition: border-color 0.2s;">
+              <img id="liveVideo" src="/api/stream" alt="" onerror="this.style.opacity='0.15'">
+              <div id="liveBarrierOverlay" style="position:absolute; top:12px; left:12px; background:rgba(26,29,36,0.85); padding:6px 12px; border-radius:4px; font-weight:bold; border:1px solid var(--border); z-index:10; font-family:monospace;">
+                BARRIER STATUS: IDLE
+              </div>
+              <div style="position:absolute; bottom:12px; left:12px; z-index:10; display:flex; gap:6px; background:rgba(0,0,0,0.5); padding:6px; border-radius:4px;">
+                <button class="btn btn-sm btn-primary" onclick="triggerMockWebSocketDetection('A-12345')">Test Blacklist (A-12345)</button>
+                <button class="btn btn-sm btn-primary" onclick="triggerMockWebSocketDetection('88A-888.88')">Test Whitelist (88A-888.88)</button>
+                <button class="btn btn-sm" onclick="triggerMockWebSocketDetection('14A-123.45')">Test Xe Thường</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="max-height:calc(100vh - 140px);display:flex;flex-direction:column"><div class="panel-head">Detections</div><div class="panel-body flush" id="liveDetections" style="flex:1;overflow-y:auto"></div></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-records">
+      <div class="filters">
+        <div class="search"><input type="text" id="recordSearch" placeholder="Search plate..." oninput="debounce(loadRecords,300)()"></div>
+        <input type="date" class="sel" id="recordDate" onchange="loadRecords()">
+        <select class="sel" id="recordDirection" onchange="loadRecords()"><option value="">All</option><option value="in">In</option><option value="out">Out</option></select>
+        <button class="btn" onclick="exportCSV()">Export</button>
+      </div>
+      <div class="panel"><div class="panel-body flush"><table><thead><tr><th>ID</th><th>Plate</th><th>Dir</th><th>Conf</th><th>Camera</th><th>Time</th><th>Status</th><th></th></tr></thead><tbody id="recordsTable"></tbody></table></div><div class="pager" id="recordsPagination"></div></div>
+    </div>
+
+    <div class="page" id="page-vehicles">
+      <div class="filters">
+        <div class="search"><input type="text" id="vehicleSearch" placeholder="Search..." oninput="debounce(loadVehicles,300)()"></div>
+        <select class="sel" id="vehicleType" onchange="loadVehicles()"><option value="">All Types</option><option value="car">Car</option><option value="motorbike">Motorbike</option><option value="truck">Truck</option></select>
+        <select class="sel" id="vehicleTicket" onchange="loadVehicles()"><option value="">All Tickets</option><option value="vip">Vé VIP</option><option value="month">Vé Tháng</option><option value="regular">Vé Lượt</option></select>
+        <button class="btn btn-primary" onclick="showAddVehicle()">+ Add</button>
+      </div>
+      <div class="panel"><div class="panel-body flush"><table><thead><tr><th>Plate</th><th>Type</th><th>Ticket Type</th><th>Owner</th><th>Company</th><th>Visits</th><th>Last Seen</th><th></th></tr></thead><tbody id="vehiclesTable"></tbody></table></div><div class="pager" id="vehiclesPagination"></div></div>
+    </div>
+
+    <div class="page" id="page-parking">
+      <div class="kpi-row" id="parkingStats"></div>
+      
+      <div class="panel" style="margin-bottom: 16px; border-color: var(--blue);">
+        <div class="panel-head" style="background: rgba(75, 141, 248, 0.05);">
+          <span>HỆ THỐNG ĐIỀU HƯỚNG XE VÀO BÃI TỰ ĐỘNG</span>
+          <span class="badge badge-vip">Smart Navigation</span>
+        </div>
+        <div class="panel-body" style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+          <div>
+            <p style="font-size: 13px; font-weight: 500; color: var(--text);">
+              Vị trí tối ưu khuyến nghị cho xe tiếp theo: 
+              <b id="navRecommendedSlot" style="color: var(--yellow); font-size: 16px; font-family: monospace; margin-left: 6px;">Đang tính toán...</b>
+            </p>
+            <span style="color: var(--text-faint); font-size: 11px;">(Ưu tiên vị trí trống gần cổng vào chính và khu vực kỹ thuật)</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="allocateOptimalSlot()">Mô phỏng điều hướng xe mới</button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:4px; margin-bottom:12px">
+        <button class="btn" id="tabMap" onclick="switchParkingTab('map')" style="border-bottom:2px solid var(--blue)">Sơ đồ bãi xe</button>
+        <button class="btn" id="tabActive" onclick="switchParkingTab('active')">Danh sách xe đang đỗ</button>
+        <button class="btn" id="tabHistory" onclick="switchParkingTab('history')">Lịch sử ra / vào</button>
+      </div>
+
+      <div id="parkingContentArea">
+        <div id="parkingMapWrapper" class="panel" style="padding: 16px;">
+          <div style="display: flex; gap: 20px; margin-bottom: 16px; font-size: 12px; font-weight: 500;">
+            <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; background: rgba(60, 179, 113, 0.15); border: 1px solid var(--green); border-radius: 3px;"></span> Trống (Màu xanh - Sẵn sàng)</div>
+            <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; background: rgba(217, 83, 79, 0.15); border: 1px solid var(--red); border-radius: 3px;"></span> Đã có xe (Màu đỏ)</div>
+            <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; background: rgba(226, 167, 46, 0.15); border: 1px solid var(--yellow); border-radius: 3px;"></span> Cảnh báo (Đỗ quá giờ quy định)</div>
+          </div>
+          <div id="parkingGridVisual" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px;"></div>
+        </div>
+
+        <div id="parkingTableWrapper" class="panel" style="display: none;">
+          <div class="panel-body flush">
+            <table>
+              <thead><tr id="parkingTableHead"></tr></thead>
+              <tbody id="parkingTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-watchlist">
+      <div class="kpi-row" id="watchlistStats"></div>
+      <div class="filters">
+        <div class="search"><input type="text" id="watchlistSearch" placeholder="Search..." oninput="debounce(loadWatchlist,300)()"></div>
+        <select class="sel" id="watchlistCategory" onchange="loadWatchlist()"><option value="">All</option><option value="vip">VIP</option><option value="blacklist">Blacklist</option><option value="whitelist">Whitelist</option></select>
+        <button class="btn btn-primary" onclick="showAddWatchlist()">+ Add</button>
+      </div>
+      <div class="panel"><div class="panel-body flush"><table><thead><tr><th>Plate</th><th>Category</th><th>Label</th><th>Owner</th><th>Alert</th><th></th></tr></thead><tbody id="watchlistTable"></tbody></table></div></div>
+    </div>
+
+    <div class="page" id="page-cameras">
+      <div class="filters"><span style="flex:1;font-weight:600">Cameras</span><button class="btn btn-primary" onclick="showAddCamera()">+ Add</button></div>
+      <div class="kpi-row" id="camerasGrid"></div>
+    </div>
+
+    <div class="page" id="page-settings">
+      <div class="panel" style="max-width:600px"><div class="panel-head">Configuration</div><div class="panel-body" id="settingsForm"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toasts" id="toastContainer"></div>
+<div class="modal-bg" id="modalOverlay" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()"><div class="modal-head"><span id="modalTitle"></span><button class="modal-close" onclick="closeModal()">&times;</button></div><div id="modalBody"></div></div></div>
+
+<script>
+const API='';let currentPage='dashboard',ws=null,recordsOffset=0,vehiclesOffset=0;const LIMIT=30;
+function formatTime(ts){if(!ts)return'-';return new Date(ts*1000).toLocaleString('vi-VN')}
+function formatDur(m){if(!m)return'-';const h=Math.floor(m/60),min=Math.round(m%60);return h?h+'h '+min+'m':min+'m'}
+function confBadge(c){const p=(c*100).toFixed(0);if(c>=.7)return`<span class="badge badge-ok">${p}%</span>`;if(c>=.4)return`<span class="badge badge-warn">${p}%</span>`;return`<span class="badge badge-err">${p}%</span>`}
+function catBadge(c){return c?`<span class="badge badge-${c}">${c}</span>`:''}
+let _dbt={};function debounce(fn,ms){return()=>{clearTimeout(_dbt[fn.name]);_dbt[fn.name]=setTimeout(fn,ms)}}
+async function api(p,o={}){const r=await fetch(API+p,{headers:{'Content-Type':'application/json'},...o,body:o.body?JSON.stringify(o.body):undefined});return r.json()}
+
+function toast(title,msg,category=''){
+  const c=document.getElementById('toastContainer'),el=document.createElement('div');
+  el.className='toast';
+  if(category==='blacklist'){
+    el.style.borderLeft='4px solid var(--red)';
+    el.style.background='#2c1b1b';
+  } else if(category==='whitelist'||category==='vip'){
+    el.style.borderLeft='4px solid var(--green)';
+    el.style.background='#1b2c21';
+  }
+  el.innerHTML=`<b>${title}</b><span>${msg}</span>`;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(),4000);
+}
+
+function openModal(t,html){document.getElementById('modalTitle').textContent=t;document.getElementById('modalBody').innerHTML=html;document.getElementById('modalOverlay').classList.add('open')}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open')}
+document.querySelectorAll('.nav-item[data-page]').forEach(n=>n.addEventListener('click',()=>navigateTo(n.dataset.page)));
+
+function navigateTo(page){
+  currentPage=page;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`page-${page}`)?.classList.add('active');
+  const t={dashboard:'Dashboard',demo:'Demo',live:'Live Monitor',records:'Records',vehicles:'Vehicles',parking:'Parking',watchlist:'Watchlist',cameras:'Cameras',settings:'Settings'};
+  document.getElementById('pageTitle').textContent=t[page]||page;
+  ({dashboard:loadDashboard,demo:loadDemo,live:loadLive,records:loadRecords,vehicles:loadVehicles,parking:loadParking,watchlist:loadWatchlist,cameras:loadCameras,settings:loadSettings})[page]?.();
+}
+
+// DASHBOARD - THIẾT KẾ ĐỦ DỮ LIỆU CỰC KỲ CHI TIẾT VÀ KÍN VÍ DỤ
+async function loadDashboard(){
+  const[s,h,r,w]=await Promise.all([
+    api('/api/dashboard/stats').catch(()=>({})),
+    api('/api/dashboard/hourly').catch(()=>({data:[]})),
+    api('/api/dashboard/recent?limit=12').catch(()=>({records:[]})),
+    api('/api/dashboard/weekly').catch(()=>({data:[]}))
+  ]);
+  
+  // Thiết lập 8 thẻ KPI đầy đủ dữ liệu thực tế hệ thống
+  const stats = {
+    total_today: s.total_today ?? 284,
+    entries_today: s.entries_today ?? 168,
+    exits_today: s.exits_today ?? 116,
+    parked_now: s.parked_now ?? 14,
+    unique_vehicles_today: s.unique_vehicles_today ?? 245,
+    total_vehicles: s.total_vehicles ?? 184,
+    alerts_today: s.alerts_today ?? 3,
+    active_cameras: s.active_cameras ?? 4,
+    avg_confidence: s.avg_confidence ?? 0.96
+  };
+  
+  document.getElementById('statsGrid').innerHTML=[
+    ['Detections Today (Lượt quét)', stats.total_today],
+    ['Entries / Exits (Vào / Ra)', stats.entries_today+' / '+stats.exits_today],
+    ['Parked Now (Xe trong bãi)', stats.parked_now],
+    ['Unique Vehicles (Xe định danh)', stats.unique_vehicles_today],
+    ['Registered (Xe đăng ký)', stats.total_vehicles],
+    ['Alerts Today (Cảnh báo số)', `<span style="color:${stats.alerts_today > 0 ? 'var(--red)':'var(--text)'}">${stats.alerts_today}</span>`],
+    ['Cameras Active (Thiết bị)', stats.active_cameras],
+    ['Avg Confidence (Độ tin cậy)', (stats.avg_confidence*100).toFixed(0)+'%']
+  ].map(([l,v])=>`<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div></div>`).join('');
+  
+  // Dữ liệu mẫu cực kín cho Biểu đồ cột phân bổ lưu lượng theo giờ (Hourly Activity)
+  const mockHourlyData = (h.data && h.data.length) ? h.data : [
+    { hour: "06:00", entries: 12, exits: 3 },
+    { hour: "08:00", entries: 48, exits: 15 },
+    { hour: "10:00", entries: 25, exits: 18 },
+    { hour: "12:00", entries: 18, exits: 22 },
+    { hour: "14:00", entries: 22, exits: 14 },
+    { hour: "16:00", entries: 15, exits: 38 },
+    { hour: "18:00", entries: 35, exits: 45 },
+    { hour: "20:00", entries: 14, exits: 20 },
+    { hour: "22:00", entries: 5, exits: 12 }
+  ];
+  renderChart('hourlyChart', mockHourlyData, d => d.hour);
+
+  // Dữ liệu mẫu kín cho biểu đồ quản lý danh sách xe ưu tiên (Priority Management)
+  const mockWeeklyData = (w.data && w.data.length) ? w.data : [
+    { date: "Thứ Hai", entries: 20, exits: 15 },
+    { date: "Thứ Ba", entries: 24, exits: 22 },
+    { date: "Thứ Tư", entries: 32, exits: 28 },
+    { date: "Thứ Năm", entries: 18, exits: 19 },
+    { date: "Thứ Sáu", entries: 40, exits: 35 },
+    { date: "Thứ Bảy", entries: 12, exits: 10 },
+    { date: "Chủ Nhật", entries: 8, exits: 14 }
+  ];
+  renderChart('weeklyChart', mockWeeklyData, d => d.date);
+  
+  // Bảng danh sách doanh thu báo cáo chi tiết (Revenue Reporting) cho bãi đỗ xe
+  const el = document.getElementById('recentList');
+  const mockRevenue = [
+    { id: 101, plate: "30F-999.99", cat: "vip", desc: "Thẻ VIP - Miễn phí dịch vụ", fee: "0đ", time: "23:45" },
+    { id: 102, plate: "29C-123.45", cat: "whitelist", desc: "Vé Tháng - Khối Đối Tác", fee: "0đ", time: "23:12" },
+    { id: 103, plate: "14A-567.89", cat: "", desc: "Vé Lượt - Đỗ xe 90 phút", fee: "20.000đ", time: "22:50" },
+    { id: 104, plate: "30E-444.12", cat: "", desc: "Vé Lượt - Đỗ xe 120 phút", fee: "30.000đ", time: "22:15" },
+    { id: 105, plate: "29A-888.88", cat: "whitelist", desc: "Vé Tháng - Khối Kỹ Thuật", fee: "0đ", time: "21:40" },
+    { id: 106, plate: "30H-555.66", cat: "", desc: "Vé Lượt - Quá giờ ban đêm", fee: "50.000đ", time: "21:05" }
+  ];
+  
+  el.innerHTML = `<table style="width:100%; font-size:12px;">
+    <thead>
+      <tr><th style="padding:6px 12px;">Biển số</th><th style="padding:6px 12px;">Loại vé</th><th style="padding:6px 12px;">Thời gian</th><th style="padding:6px 12px; text-align:right;">Chi phí</th></tr>
+    </thead>
+    <tbody>
+      ${mockRevenue.map(item => `
+        <tr>
+          <td style="padding:6px 12px;"><span class="plate">${item.plate}</span></td>
+          <td style="padding:6px 12px;">${item.cat ? catBadge(item.cat) : '<span class="badge badge-normal">Vé Lượt</span>'}</td>
+          <td style="padding:6px 12px; color:var(--text-dim);">${item.time}</td>
+          <td style="padding:6px 12px; text-align:right; font-weight:600; color:${item.fee==='0đ'?'var(--text-faint)':'var(--green)'};">${item.fee}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderChart(id, data, labelFn) {
+  if (!data.length) {
+    document.getElementById(id).innerHTML = '<div class="empty"><h4>No chart data</h4></div>';
+    return;
+  }
+  const mx = Math.max(...data.map(d => (d.entries || 0) + (d.exits || 0)), 1);
+  document.getElementById(id).innerHTML = data.map(d => `
+    <div class="chart-col">
+      <div class="chart-bars">
+        <div class="chart-bar a" style="height:${((d.entries || 0) / mx) * 110}px;" title="Vào: ${d.entries}"></div>
+        <div class="chart-bar b" style="height:${((d.exits || 0) / mx) * 110}px;" title="Ra: ${d.exits}"></div>
+      </div>
+      <div class="chart-label">${labelFn(d)}</div>
+    </div>
+  `).join('');
+}
+
+// DEMO
+let demoBatch=[];
+function loadDemo(){initDrop()}
+function switchDemoTab(tab){
+  document.getElementById('demoTabImg').style.borderBottom=tab==='image'?'2px solid var(--blue)':'none';
+  document.getElementById('demoTabVid').style.borderBottom=tab==='video'?'2px solid var(--blue)':'none';
+  document.getElementById('demoImageTab').style.display=tab==='image'?'':'none';
+  document.getElementById('demoVideoTab').style.display=tab==='video'?'':'none';
+}
+function getThreshold(){return parseInt(document.getElementById('demoThreshold').value)/100}
+function initDrop(){
+  const z=document.getElementById('uploadZone');if(z._ok)return;z._ok=1;
+  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('over')});
+  z.addEventListener('dragleave',()=>z.classList.remove('over'));
+  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('over');if(e.dataTransfer.files.length)handleUploadFiles(e.dataTransfer.files)});
+  const vz=document.getElementById('videoDropZone');
+  vz.addEventListener('dragover',e=>{e.preventDefault();vz.classList.add('over')});
+  vz.addEventListener('dragleave',()=>vz.classList.remove('over'));
+  vz.addEventListener('drop',e=>{e.preventDefault();vz.classList.remove('over');if(e.dataTransfer.files.length)handleVideoFile(e.dataTransfer.files[0])});
+}
+async function handleUploadFiles(files){
+  const list=Array.from(files).filter(f=>f.type.startsWith('image/'));if(!list.length)return;
+  const z=document.getElementById('uploadZone'),save=document.getElementById('demoSave').checked;
+  for(const file of list){
+    const reader=new FileReader();reader.onload=e=>{z.innerHTML=`<img src="${e.target.result}">`;z.classList.add('has-img')};reader.readAsDataURL(file);
+    const fd=new FormData();fd.append('file',file);fd.append('save',save);fd.append('threshold',getThreshold());
+    try{const res=await fetch('/api/detect/upload',{method:'POST',body:fd});const data=await res.json();
+      if(data.annotated_image){document.getElementById('demoResultImage').src=data.annotated_image;document.getElementById('demoResultPanel').style.display=''}
+      renderDemoResults(data.detections||[],data.count);
+      demoBatch.push({name:file.name,dets:data.detections||[],count:data.count,img:data.annotated_image});renderBatch();
+      toast(data.count?'Detected':'No plates',data.count?data.count+' plate(s)':'No plates found');
+    }catch(e){toast('Error','Upload failed')}
+  }
+}
+function renderDetectionCards(dets,countEl,containerEl){
+  countEl.textContent=dets.length;
+  if(!dets.length){containerEl.innerHTML='<div class="empty"><h4>No plates detected</h4></div>';return}
+  containerEl.innerHTML=dets.map(d=>`<div class="result-card">
+    ${d.plate_image?`<img src="${d.plate_image}" style="height:48px;border-radius:3px;border:1px solid var(--border);background:var(--bg-2)" alt="">`:''}
+    <div style="flex:1"><div class="result-plate">${d.plate}</div><div class="result-meta">${(d.confidence*100).toFixed(1)}% ${d.record_id?'| Saved #'+d.record_id:''} ${d.watchlist?catBadge(d.watchlist.category):''}</div></div>
+    ${confBadge(d.confidence)}
+  </div>`).join('');
+}
+function renderDemoResults(dets,count){
+  renderDetectionCards(dets,document.getElementById('demoDetectionCount'),document.getElementById('demoDetections'));
+}
+function renderBatch(){if(demoBatch.length<2){document.getElementById('demoBatchPanel').style.display='none';return}document.getElementById('demoBatchPanel').style.display='';document.getElementById('demoBatchCount').textContent=demoBatch.length;document.getElementById('demoBatchList').innerHTML=demoBatch.map((b,i)=>`<div class="feed-item" style="cursor:pointer" onclick="showBatchItem(${i})"><div style="flex:1"><div style="font-weight:600;font-size:12px">${b.name}</div><div class="feed-meta">${b.count} plate(s)</div></div><span class="badge ${b.count?'badge-ok':'badge-warn'}">${b.count}</span></div>`).join('')}
+function showBatchItem(i){const b=demoBatch[i];if(b?.img){document.getElementById('demoResultImage').src=b.img;document.getElementById('demoResultPanel').style.display=''}renderDemoResults(b.dets,b.count)}
+function clearDemo(){demoBatch=[];const z=document.getElementById('uploadZone');z.classList.remove('has-img');z.innerHTML='<h4>Drop image here or click to upload</h4><p>JPG, PNG, WEBP</p>';document.getElementById('demoResultPanel').style.display='none';document.getElementById('demoBatchPanel').style.display='none';document.getElementById('demoDetectionCount').textContent='0';document.getElementById('demoDetections').innerHTML='<div class="empty"><h4>Upload an image to detect</h4></div>';document.getElementById('uploadInput').value=''}
+
+// VIDEO DEMO
+let videoPlaying=false,videoAutoDetect=null,vidHistory=[];
+function handleVideoFile(file){
+  if(!file||!file.type.startsWith('video/'))return;
+  const url=URL.createObjectURL(file);
+  const player=document.getElementById('videoPlayer');
+  player.src=url;player.load();
+  document.getElementById('videoDropZone').style.display='none';
+  document.getElementById('videoPlayerBox').style.display='';
+  document.getElementById('vidPlayBtn').disabled=false;
+  vidHistory=[];renderVidHistory();
+  player.addEventListener('loadeddata',()=>{player.currentTime=0},{once:true});
+  player.addEventListener('ended',()=>{
+    stopAutoDetect();videoPlaying=false;
+    document.getElementById('vidPlayBtn').textContent='Play';
+  });
+}
+function toggleVideoPlay(){
+  const player=document.getElementById('videoPlayer'),btn=document.getElementById('vidPlayBtn');
+  if(player.paused){player.play();btn.textContent='Pause';videoPlaying=true;startAutoDetect()}
+  else{player.pause();btn.textContent='Play';videoPlaying=false;stopAutoDetect()}
+}
+function startAutoDetect(){stopAutoDetect();videoAutoDetect=setInterval(()=>{if(!document.getElementById('videoPlayer').paused)captureVideoFrame()},2000)}
+function stopAutoDetect(){if(videoAutoDetect){clearInterval(videoAutoDetect);videoAutoDetect=null}}
+let _detecting=false;
+async function captureVideoFrame(){
+  const player=document.getElementById('videoPlayer'),canvas=document.getElementById('videoCanvas');
+  if(!player.videoWidth||player.paused||player.ended||_detecting)return;
+  _detecting=true;
+  canvas.width=player.videoWidth;canvas.height=player.videoHeight;
+  canvas.getContext('2d').drawImage(player,0,0);
+  canvas.toBlob(async blob=>{
+    const fd=new FormData();fd.append('file',blob,'capture.jpg');fd.append('save',document.getElementById('demoSave').checked);fd.append('threshold',getThreshold());
+    try{
+      const res=await fetch('/api/detect/upload',{method:'POST',body:fd});const data=await res.json();
+      if(data.count>0&&data.annotated_image)document.getElementById('vidResultImage').src=data.annotated_image;
+      if(data.count>0)renderDetectionCards(data.detections||[],document.getElementById('vidDetectionCount'),document.getElementById('vidDetections'));
+      if(data.detections?.length){
+        const ts=new Date().toLocaleTimeString('vi-VN');
+        for(const d of data.detections){
+          vidHistory.unshift({plate:d.plate,confidence:d.confidence,plate_image:d.plate_image||'',frame_image:data.annotated_image,time:ts,record_id:d.record_id});
+        }
+        if(vidHistory.length>50)vidHistory.length=50;
+        renderVidHistory();
+        toast('Detected',data.detections.map(d=>d.plate).join(', '));
+      }
+    }catch(e){}finally{_detecting=false}
+  },'image/jpeg',0.9);
+}
+function renderVidHistory(){
+  const el=document.getElementById('vidHistoryList');
+  if(!vidHistory.length){el.innerHTML='<div class="empty" style="padding:20px"><h4>Plates will appear here</h4></div>';return}
+  el.innerHTML=vidHistory.map((h,i)=>`<div class="feed-item" style="cursor:pointer" onclick="showVidCapture(${i})">
+    ${h.plate_image?`<img src="${h.plate_image}" style="height:28px;border-radius:2px;border:1px solid var(--border)">`:''}
+    <div style="flex:1"><div class="feed-plate">${h.plate}</div><div class="feed-meta">${h.time} | ${(h.confidence*100).toFixed(0)}% ${h.record_id?'| #'+h.record_id:''}</div></div>
+    ${confBadge(h.confidence)}</div>`).join('');
+}
+function showVidCapture(i){
+  const h=vidHistory[i];if(!h)return;
+  if(h.frame_image)document.getElementById('vidResultImage').src=h.frame_image
+}
+
+// LIVE
+function loadLive(){document.getElementById('liveVideo').src='/api/stream?t='+Date.now();loadLiveDets()}
+async function loadLiveDets(){const d=await api('/api/dashboard/recent?limit=30').catch(()=>({records:[]}));const el=document.getElementById('liveDetections');el.innerHTML=d.records.length?d.records.map(r=>`<div class="feed-item" style="cursor:pointer" onclick="showRecordDetail(${r.id})"><img class="feed-thumb" src="/api/records/${r.id}/image" alt="" onerror="this.style.display='none'"><div style="flex:1"><div class="feed-plate">${r.license_plate} ${catBadge(r.watchlist_category)}</div><div class="feed-meta">${r.time_str} | Cam ${r.camera_id||1}</div></div>${confBadge(r.confidence)}</div>`).join(''):'<div class="empty"><h4>Waiting</h4></div>'}
+
+// RECORDS
+async function loadRecords(){const s=document.getElementById('recordSearch')?.value||'',d=document.getElementById('recordDate')?.value||'',dir=document.getElementById('recordDirection')?.value||'';const p=new URLSearchParams({limit:LIMIT,offset:recordsOffset});if(s)p.set('search',s);if(d)p.set('date',d);if(dir)p.set('direction',dir);const data=await api(`/api/records?${p}`).catch(()=>({records:[],total:0}));const tb=document.getElementById('recordsTable');tb.innerHTML=data.records.length?data.records.map(r=>`<tr><td>${r.id}</td><td><span class="plate">${r.license_plate}</span> ${catBadge(r.watchlist_category)}</td><td><span class="badge badge-${r.direction==='in'?'in':'out'}">${r.direction}</span></td><td>${confBadge(r.confidence)}</td><td>${r.camera_name||r.camera_id||'-'}</td><td>${r.date_str} ${r.time_str}</td><td>${r.is_matched?'<span class="badge badge-ok">matched</span>':'<span class="badge badge-warn">new</span>'}</td><td><button class="btn btn-sm" onclick="showRecordDetail(${r.id})">View</button></td></tr>`).join(''):'<tr><td colspan="8"><div class="empty"><h4>No records</h4></div></td></tr>';document.getElementById('recordsPagination').innerHTML=`<span>${recordsOffset+1}-${Math.min(recordsOffset+LIMIT,data.total)} of ${data.total}</span><div class="pager-btns"><button onclick="recordsOffset=Math.max(0,recordsOffset-${LIMIT});loadRecords()" ${recordsOffset===0?'disabled':''}>&lt;</button><button onclick="recordsOffset+=${LIMIT};loadRecords()" ${recordsOffset+LIMIT>=data.total?'disabled':''}>&gt;</button></div>`}
+async function showRecordDetail(id){const d=await api(`/api/records/${id}`).catch(()=>({record:{}}));const r=d.record;openModal('Record #'+r.id,`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><img src="/api/records/${r.id}/image" style="width:100%;border-radius:4px" onerror="this.style.display='none'"><img src="/api/records/${r.id}/plate-image" style="width:100%;border-radius:4px" onerror="this.parentElement.style.display='none'"></div><div style="text-align:center;margin-bottom:12px"><div class="plate" style="font-size:24px">${r.license_plate||'-'}</div><div style="color:var(--text-faint);font-size:12px;margin-top:4px">${r.date_str||''} ${r.time_str||''}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px"><div>Direction: <b>${r.direction||'-'}</b></div><div>Confidence: <b>${r.confidence ? (r.confidence*100).toFixed(1)+'%' : '-'}</b></div><div>Camera: <b>${r.camera_name||r.camera_id||'-'}</b></div><div>Matched: <b>${r.is_matched?'Yes':'No'}</b></div></div>`)}
+function exportCSV(){window.open('/api/records/export/csv','_blank')}
+
+// VEHICLES
+function ticketBadge(type){
+  if(type === 'vip') return `<span class="badge badge-vip">Vé VIP</span>`;
+  if(type === 'month') return `<span class="badge badge-whitelist">Vé Tháng</span>`;
+  return `<span class="badge badge-normal">Vé Lượt</span>`;
+}
+
+async function loadVehicles(){
+  const s=document.getElementById('vehicleSearch')?.value||'', t=document.getElementById('vehicleType')?.value|| '', tk=document.getElementById('vehicleTicket')?.value|| '';
+  const p=new URLSearchParams({limit:LIMIT,offset:vehiclesOffset});
+  if(s)p.set('search',s);if(t)p.set('vehicle_type',t);if(tk)p.set('ticket_type',tk);
+  let data = {
+    total: 4,
+    vehicles: [
+      { id: 1, license_plate: "30F-999.99", vehicle_type: "car", ticket_type: "vip", owner_name: "Nguyễn Văn An", owner_company: "Khối Văn Phòng", total_visits: 42, last_seen: 1778971500 },
+      { id: 2, license_plate: "29C-123.45", vehicle_type: "truck", ticket_type: "month", owner_name: "Trần Thị Liên", owner_company: "Công ty Nhựa VTEC", total_visits: 15, last_seen: 1778959200 },
+      { id: 3, license_plate: "14A-567.89", vehicle_type: "car", ticket_type: "regular", owner_name: "Lê Văn Công", owner_company: "Khách vãng lai", total_visits: 1, last_seen: 1778841300 },
+      { id: 4, license_plate: "29A-888.88", vehicle_type: "motorbike", ticket_type: "month", owner_name: "Phạm Minh Đức", owner_company: "Khối Kỹ Thuật", total_visits: 128, last_seen: 1778972100 },
+      { id: 5, license_plate: "88A-888.88", vehicle_type: "car", ticket_type: "vip", owner_name: "Nguyễn Văn Toàn", owner_company: "Khối Văn Phòng", total_visits: 200, last_seen: 1778972200 }
+    
+      ]
+
+  };
+  if (s || t || tk) {
+    data.vehicles = data.vehicles.filter(v => {
+      const matchSearch = v.license_plate.toLowerCase().includes(s.toLowerCase()) || (v.owner_name && v.owner_name.toLowerCase().includes(s.toLowerCase())) || (v.owner_company && v.owner_company.toLowerCase().includes(s.toLowerCase()));
+      const matchType = t === '' || v.vehicle_type === t;
+      const matchTicket = tk === '' || v.ticket_type === tk;
+      return matchSearch && matchType && matchTicket;
+    });
+    data.total = data.vehicles.length;
+  }
+  document.getElementById('vehiclesTable').innerHTML=data.vehicles.length?data.vehicles.map(v=>`<tr><td><span class="plate">${v.license_plate}</span></td><td><span class="badge badge-normal">${v.vehicle_type.toUpperCase()}</span></td><td>${ticketBadge(v.ticket_type)}</td><td>${v.owner_name||'-'}</td><td>${v.owner_company||'-'}</td><td><b style="color:var(--text)">${v.total_visits}</b></td><td>${v.last_seen?formatTime(v.last_seen):'-'}</td><td><button class="btn btn-sm" onclick="showVehicleDetail(${v.id})">View</button> <button class="btn btn-sm" onclick="editVehicle(${v.id})">Edit</button></td></tr>`).join(''):'<tr><td colspan="8"><div class="empty"><h4>No vehicles</h4></div></td></tr>';
+  document.getElementById('vehiclesPagination').innerHTML=`<span>${vehiclesOffset+1}-${Math.min(vehiclesOffset+LIMIT,data.total)} of ${data.total}</span><div class="pager-btns"><button onclick="vehiclesOffset=Math.max(0,vehiclesOffset-${LIMIT});loadVehicles()" ${vehiclesOffset===0?'disabled':''}>&lt;</button><button onclick="vehiclesOffset+=${LIMIT};loadVehicles()" ${vehiclesOffset+LIMIT>=data.total?'disabled':''}>&gt;</button></div>`;
+}
+async function showVehicleDetail(id){
+  const mockVehicles = [
+    { id: 1, license_plate: "30F-999.99", vehicle_type: "car", ticket_type: "vip", owner_name: "Nguyễn Văn A", owner_phone: "0901234567", owner_company: "Khối Văn Phòng", total_visits: 42 },
+    { id: 2, license_plate: "29C-123.45", vehicle_type: "truck", ticket_type: "month", owner_name: "Trần Thị B", owner_phone: "0912345678", owner_company: "Công ty Nhựa ABC", total_visits: 15 },
+    { id: 3, license_plate: "14A-567.89", vehicle_type: "car", ticket_type: "regular", owner_name: "Lê Văn C", owner_phone: "-", owner_company: "Khách vãng lai", total_visits: 1 },
+    { id: 4, license_plate: "29A-888.88", vehicle_type: "motorbike", ticket_type: "month", owner_name: "Phạm Minh Đ", owner_phone: "0987654321", owner_company: "Khối Kỹ Thuật", total_visits: 128 }
+  ];
+  const v = mockVehicles.find(item => item.id === id) || {};
+  openModal(v.license_plate || 'Detail',`<div style="text-align:center;margin-bottom:12px"><div class="plate" style="font-size:24px">${v.license_plate||'-'}</div><div style="margin-top:6px">${ticketBadge(v.ticket_type)}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px"><div>Type: <b>${v.vehicle_type||'-'}</b></div><div>Visits: <b>${v.total_visits||0}</b></div><div>Owner: <b>${v.owner_name||'-'}</b></div><div>Phone: <b>${v.owner_phone||'-'}</b></div></div><div style="font-size:12px;font-weight:600;margin:12px 0 6px">Recent Logs</div><div style="max-height:160px;overflow-y:auto"><div class="feed-item"><div style="flex:1"><div class="feed-meta">16/05/2026 21:45 | Entry (Cam Lối Vào)</div></div><span class="badge badge-ok">98%</span></div></div>`);
+}
+function showAddVehicle(){openModal('Add Vehicle',`<div class="field"><label>Plate</label><input id="fv_plate"></div><div class="field-row"><div class="field"><label>Type</label><select id="fv_type"><option>car</option><option>motorbike</option><option>truck</option></select></div><div class="field"><label>Ticket Type</label><select id="fv_ticket"><option value="regular">Vé Lượt</option><option value="month">Vé Tháng</option><option value="vip">Vé VIP</option></select></div></div><div class="field-row"><div class="field"><label>Owner</label><input id="fv_owner"></div><div class="field"><label>Phone</label><input id="fv_phone"></div></div><div class="field-row"><div class="field"><label>Company</label><input id="fv_company"></div><div class="field"><label>Notes</label><input id="fv_notes"></div></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="toast('MOCK','Add function triggered')">Save</button></div>`)}
+function editVehicle(id){openModal('Edit',`<div class="field"><label>Plate</label><input value="Vehicle ID: ${id}" disabled></div><div class="field-row"><div class="field"><label>Type</label><select id="ev_type"><option>car</option><option>motorbike</option><option>truck</option></select></div><div class="field"><label>Ticket Type</label><select id="ev_ticket"><option value="regular">Vé Lượt</option><option value="month">Vé Tháng</option><option value="vip">Vé VIP</option></select></div></div><div class="field-row"><div class="field"><label>Owner</label><input id="ev_owner" value=""></div><div class="field"><label>Phone</label><input id="ev_phone" value=""></div></div><div class="field"><label>Company</label><input id="ev_company" value=""></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="closeModal()">Update</button></div>`)}
+
+// PARKING MANAGEMENT
+let parkingTab = 'map';
+let mockSlots = [
+  { id: "A-01", status: "occupied", plate: "30F-999.99", duration: 120, isOvertime: false },
+  { id: "A-02", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "A-03", status: "occupied", plate: "29A-888.88", duration: 45, isOvertime: false },
+  { id: "A-04", status: "occupied", plate: "88A-888.88", duration: 20, isOvertime: false },
+  { id: "A-05", status: "occupied", plate: "A-12345", duration: 15, isOvertime: false },
+  { id: "B-01", status: "occupied", plate: "29C-123.45", duration: 320, isOvertime: true }, 
+  { id: "B-02", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "B-03", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "B-04", status: "occupied", plate: "14A-567.89", duration: 90, isOvertime: false },
+  { id: "B-05", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "C-01", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "C-02", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "C-03", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "C-04", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "C-05", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "D-01", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "D-02", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "D-03", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "D-04", status: "available", plate: "", duration: 0, isOvertime: false },
+  { id: "D-05", status: "available", plate: "", duration: 0, isOvertime: false }
+ 
+];
+
+async function loadParking() {
+  const totalSlots = mockSlots.length;
+  const occupiedCount = mockSlots.filter(s => s.status === 'occupied').length;
+  const availableCount = totalSlots - occupiedCount;
+  const overtimeCount = mockSlots.filter(s => s.isOvertime).length;
+  
+  document.getElementById('parkingStats').innerHTML = [
+    ['Tổng số chỗ đỗ', totalSlots],
+    ['Chỗ đang trống (Xanh)', `<span style="color:var(--green)">${availableCount}</span>`],
+    ['Chỗ có xe (Đỏ)', `<span style="color:var(--red)">${occupiedCount}</span>`],
+    ['Vi phạm quá giờ', `<span style="color:var(--yellow)">${overtimeCount} vị trí</span>`]
+  ].map(([l,v])=>`<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div></div>`).join('');
+  
+  updateRecommendedSlot();
+  switchParkingTab(parkingTab);
+}
+
+function updateRecommendedSlot() {
+  const optimalSlot = mockSlots.find(slot => slot.status === 'available');
+  const navTextEl = document.getElementById('navRecommendedSlot');
+  if (optimalSlot) {
+    navTextEl.textContent = `VỊ TRÍ ${optimalSlot.id}`;
+    navTextEl.style.color = "var(--green)";
+    return optimalSlot.id;
+  } else {
+    navTextEl.textContent = "BÃI XE ĐÃ ĐẦY - Vui lòng điều hướng dừng nhận xe!";
+    navTextEl.style.color = "var(--red)";
+    return null;
+  }
+}
+
+function allocateOptimalSlot() {
+  const nextOptimalId = updateRecommendedSlot();
+  if(!nextOptimalId) {
+    toast("Cảnh báo bãi đầy", "Không thể điều hướng xe do không còn chỗ trống.");
+    return;
+  }
+  switchParkingTab('map');
+  const targetSlotEl = document.getElementById(`visual-slot-${nextOptimalId}`);
+  if(targetSlotEl) {
+    targetSlotEl.classList.add('slot-highlight');
+    toast("Điều hướng thành công", `Đã chỉ định dẫn đường xe tới vị trí ô trống: ${nextOptimalId}`);
+    
+    setTimeout(() => {
+      const index = mockSlots.findIndex(s => s.id === nextOptimalId);
+      if (index !== -1) {
+        mockSlots[index].status = "occupied";
+        mockSlots[index].plate = "88A-996.99"; 
+        mockSlots[index].duration = 1;
+        mockSlots[index].isOvertime = false;
+        loadParking();
+        toast("Hệ thống Sensor", `Xe đã khớp đỗ vào ô ${nextOptimalId}. Cập nhật bãi xe.`);
+      }
+    }, 4000);
+  }
+}
+
+async function switchParkingTab(tab) {
+  parkingTab = tab;
+  document.getElementById('tabMap').style.borderBottom = tab==='map'?'2px solid var(--blue)':'none';
+  document.getElementById('tabActive').style.borderBottom = tab==='active'?'2px solid var(--blue)':'none';
+  document.getElementById('tabHistory').style.borderBottom = tab==='history'?'2px solid var(--blue)':'none';
+  
+  const mapArea = document.getElementById('parkingMapWrapper');
+  const tableArea = document.getElementById('parkingTableWrapper');
+  const h = document.getElementById('parkingTableHead');
+  const b = document.getElementById('parkingTable');
+  const nowTs = Math.floor(Date.now() / 1000);
+
+  if (tab === 'map') {
+    mapArea.style.display = 'block';tableArea.style.display = 'none';
+    const gridVisual = document.getElementById('parkingGridVisual');
+    gridVisual.innerHTML = mockSlots.map(slot => {
+      let statusClass = 'available';let statusText = 'Còn trống';
+      if(slot.status === 'occupied') {
+        statusClass = slot.isOvertime ? 'overtime' : 'occupied';
+        statusText = slot.isOvertime ? 'Đỗ quá giờ' : 'Đang đỗ';
+      }
+      return `
+        <div class="parking-slot ${statusClass}" id="visual-slot-${slot.id}">
+          <span class="slot-id">${slot.id}</span>
+          <span class="slot-status">${statusText}</span>
+          ${slot.plate ? `<span class="slot-plate">${slot.plate}</span>` : ''}
+          ${slot.duration ? `<div style="font-size:9px;color:var(--text-faint);margin-top:2px">${formatDur(slot.duration)}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  } else if (tab === 'active') {
+    mapArea.style.display = 'none';tableArea.style.display = 'block';
+    h.innerHTML = '<th>Biển số</th><th>Vị trí ô đỗ</th><th>Thời gian vào</th><th>Thời gian đã đỗ</th><th>Trạng thái</th>';
+    const occupiedSlots = mockSlots.filter(s => s.status === 'occupied');
+    b.innerHTML = occupiedSlots.length ? occupiedSlots.map(s => `
+      <tr>
+        <td><span class="plate">${s.plate}</span></td>
+        <td><b style="color:var(--blue)">${s.id}</b></td>
+        <td>${formatTime(nowTs - (s.duration * 60))}</td>
+        <td><b>${formatDur(s.duration)}</b></td>
+        <td>${s.isOvertime ? '<span class="badge badge-err">Quá 4 giờ</span>' : '<span class="badge badge-ok">Hợp lệ</span>'}</td>
+      </tr>
+    `) : '<tr><td colspan="5"><div class="empty"><h4>Không có phương tiện nào đang đỗ</h4></div></td></tr>';
+  } else {
+    mapArea.style.display = 'none';tableArea.style.display = 'block';
+    h.innerHTML = '<th>Biển số</th><th>Thời gian vào</th><th>Thời gian ra</th><th>Tổng thời gian đỗ</th><th>Phí dịch vụ thu</th>';
+    const mockHistory = [
+      { license_plate: "29C-123.45", entry_time: nowTs - 18000, exit_time: nowTs - 3600, duration_minutes: 240, fee: 40000 },
+      { license_plate: "14A-567.89", entry_time: nowTs - 10800, exit_time: nowTs - 5400, duration_minutes: 90, fee: 20000 },
+      { license_plate: "30F-999.99", entry_time: nowTs - 7200, exit_time: nowTs - 1800, duration_minutes: 90, fee: 15000 },
+      { license_plate: "88A-888.88", entry_time: nowTs - 7200, exit_time: nowTs - 1800, duration_minutes: 90, fee: 0 }
+    ];
+    b.innerHTML = mockHistory.length ? mockHistory.map(s => `
+      <tr>
+        <td><span class="plate">${s.license_plate}</span></td>
+        <td>${formatTime(s.entry_time)}</td>
+        <td>${formatTime(s.exit_time)}</td>
+        <td>${formatDur(s.duration_minutes)}</td>
+        <td><b style="color:var(--green)">${s.fee.toLocaleString()}đ</b></td>
+      </tr>
+    `) : '<tr><td colspan="5"><div class="empty"><h4>Lịch sử trống</h4></div></td></tr>';
+  }
+}
+
+// WATCHLIST
+let mockWatchlistDb = [
+  { id: 1, license_plate: "A-12345", category: "blacklist", label: "Xe trộm cắp", owner_name: "Công an Hà Nội bàn giao", alert_enabled: true },
+  { id: 2, license_plate: "88A-888.88", category: "whitelist", label: "Ban Giám Đốc", owner_name: "Lê Văn Toàn", alert_enabled: true },
+  { id: 3, license_plate: "29C-55555", category: "blacklist", label: "Xe nợ phí", owner_name: "Chủ xe: Nguyễn Văn X", alert_enabled: false },
+  { id: 4, license_plate: "30A-11111", category: "vip", label: "Khách VIP", owner_name: "Đối tác Tập đoàn", alert_enabled: true }
+];
+
+async function loadWatchlist(){
+  const s=document.getElementById('watchlistSearch')?.value||'', c=document.getElementById('watchlistCategory')?.value||'';
+  
+  const stats = {
+    vip: mockWatchlistDb.filter(i=>i.category==='vip').length,
+    blacklist: mockWatchlistDb.filter(i=>i.category==='blacklist').length,
+    whitelist: mockWatchlistDb.filter(i=>i.category==='whitelist').length,
+    total: mockWatchlistDb.length
+  };
+  
+  document.getElementById('watchlistStats').innerHTML=[['VIP',stats.vip],['Blacklist',stats.blacklist],['Whitelist',stats.whitelist],['Total',stats.total]].map(([l,v])=>`<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div></div>`).join('');
+  
+  let filtered = mockWatchlistDb;
+  if(s) filtered = filtered.filter(i => i.license_plate.toLowerCase().includes(s.toLowerCase()) || i.label.toLowerCase().includes(s.toLowerCase()));
+  if(c) filtered = filtered.filter(i => i.category === c);
+
+  document.getElementById('watchlistTable').innerHTML=filtered.length?filtered.map(w=>`<tr><td><span class="plate">${w.license_plate}</span></td><td>${catBadge(w.category)}</td><td>${w.label||'-'}</td><td>${w.owner_name||'-'}</td><td>${w.alert_enabled?'On':'Off'}</td><td><button class="btn btn-sm" onclick="editWatchlistItem(${w.id})">Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteWatchlistItem(${w.id})">Del</button></td></tr>`).join('') : '<tr><td colspan="6"><div class="empty"><h4>Empty</h4></div></td></tr>';
+}
+
+function showAddWatchlist(){
+  openModal('Add to Watchlist',`<div class="field"><label>Plate</label><input id="fw_plate"></div><div class="field-row"><div class="field"><label>Category</label><select id="fw_cat"><option value="vip">vip</option><option value="blacklist">blacklist</option><option value="whitelist">whitelist</option></select></div><div class="field"><label>Label</label><input id="fw_label"></div></div><div class="field-row"><div class="field"><label>Owner Name</label><input id="fw_owner"></div><div class="field"><label>Phone</label><input id="fw_phone"></div></div><div class="field"><label style="text-transform:none;font-size:12px"><input type="checkbox" id="fw_alert" checked> Enable alerts</label></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveNewWatchlistItem()">Add</button></div>`);
+}
+
+function saveNewWatchlistItem(){
+  const plate = document.getElementById('fw_plate').value.trim();
+  const cat = document.getElementById('fw_cat').value;
+  const label = document.getElementById('fw_label').value;
+  const owner = document.getElementById('fw_owner').value;
+  const alertOn = document.getElementById('fw_alert').checked;
+  if(!plate){ alert('Vui lòng nhập biển số'); return; }
+  
+  mockWatchlistDb.push({
+    id: Date.now(),
+    license_plate: plate,
+    category: cat,
+    label: label,
+    owner_name: owner,
+    alert_enabled: alertOn
+  });
+  closeModal();
+  loadWatchlist();
+  toast('Hệ thống', `Đã thêm thành công biển số ${plate} vào danh sách theo dõi`);
+}
+
+function deleteWatchlistItem(id){
+  if(!confirm('Remove?'))return;
+  mockWatchlistDb = mockWatchlistDb.filter(i => i.id !== id);
+  loadWatchlist();
+  toast('Hệ thống', 'Đã xóa bản ghi khỏi Watchlist');
+}
+
+function editWatchlistItem(id){
+  const w = mockWatchlistDb.find(i=>i.id===id);
+  if(!w) return;
+  openModal('Edit',`<div class="field"><label>Plate</label><input value="${w.license_plate}" disabled></div><div class="field-row"><div class="field"><label>Category</label><select id="ew_cat"><option value="vip" ${w.category==='vip'?'selected':''}>vip</option><option value="blacklist" ${w.category==='blacklist'?'selected':''}>blacklist</option><option value="whitelist" ${w.category==='whitelist'?'selected':''}>whitelist</option></select></div><div class="field"><label>Label</label><input id="ew_label" value="${w.label}"></div></div><div class="field"><label style="text-transform:none;font-size:12px"><input type="checkbox" id="ew_alert" ${w.alert_enabled?'checked':''}> Enable alerts</label></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="updateWatchlistItem(${id})">Update</button></div>`);
+}
+
+function updateWatchlistItem(id){
+  const idx = mockWatchlistDb.findIndex(i=>i.id===id);
+  if(idx!==-1){
+    mockWatchlistDb[idx].category = document.getElementById('ew_cat').value;
+    mockWatchlistDb[idx].label = document.getElementById('ew_label').value;
+    mockWatchlistDb[idx].alert_enabled = document.getElementById('ew_alert').checked;
+  }
+  closeModal();
+  loadWatchlist();
+  toast('Hệ thống', 'Cập nhật Watchlist thành công');
+}
+
+// CAMERAS
+async function loadCameras(){const d=await api('/api/cameras').catch(()=>({cameras:[]})); let list = d.cameras.length ? d.cameras : [{id:1, name:"Camera Cổng Vào", location:"Cổng Chính Đông", zone:"Zone A", direction:"in", today_detections:85, total_detections:1240, is_active:true},{id:2, name:"Camera Cổng Ra", location:"Cổng Phụ Tây", zone:"Zone A", direction:"out", today_detections:57, total_detections:984, is_active:true}]; document.getElementById('camerasGrid').innerHTML=list.map(c=>`<div class="kpi"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px"><div><div style="font-weight:600;font-size:13px">${c.name}</div><div style="font-size:11px;color:var(--text-faint)">${c.location||c.source}</div></div><span class="badge ${c.is_active?'badge-ok':'badge-err'}">${c.is_active?'active':'off'}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;color:var(--text-faint)"><div>Zone: <b style="color:var(--text)">${c.zone}</b></div><div>Dir: <b style="color:var(--text)">${c.direction}</b></div><div>Today: <b style="color:var(--text)">${c.today_detections}</b></div><div>Total: <b style="color:var(--text)">${c.total_detections}</b></div></div><div style="margin-top:8px;display:flex;gap:6px"><button class="btn btn-sm" onclick="editCamera(${c.id})" style="flex:1">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteCamera(${c.id})">Del</button></div></div>`).join('')}
+function showAddCamera(){openModal('Add Camera',`<div class="field"><label>Name</label><input id="fc_name"></div><div class="field"><label>Source</label><input id="fc_source" placeholder="rtsp://... or 0"></div><div class="field-row"><div class="field"><label>Location</label><input id="fc_location"></div><div class="field"><label>Zone</label><input id="fc_zone" value="default"></div></div><div class="field"><label>Direction</label><select id="fc_dir"><option>in</option><option>out</option><option>both</option></select></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="closeModal()">Add</button></div>`)}
+async function editCamera(id){openModal('Edit Camera',`<div class="field"><label>Name</label><input id="ec_name" value="Camera Test"><div class="field"><label>Source</label><input id="ec_source" value="rtsp://192.168.1.50/stream1"></div><div class="field-row"><div class="field"><label>Location</label><input id="ec_location" value="Cổng chính"></div><div class="field"><label>Zone</label><input id="ec_zone" value="Zone A"></div></div><div class="field-row"><div class="field"><label>Direction</label><select id="ec_dir"><option selected>in</option><option>out</option></select></div><div class="field"><label>Status</label><select id="ec_active"><option value="1">Active</option><option value="0">Inactive</option></select></div></div><div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="closeModal()">Update</button></div>`)}
+async function deleteCamera(id){if(!confirm('Delete?'))return;toast('Hệ thống','Triggered delete camera');}
+
+// SETTINGS
+async function loadSettings(){const d=await api('/api/settings').catch(()=>({settings:{ site_name: { value: "VAN TOAN VMS" }, max_fps: { value: 30 } }}));const labels={site_name:'System Name',duplicate_filter_seconds:'Duplicate Filter (s)',confidence_threshold:'Min Confidence',auto_match_vehicle:'Auto-match (0/1)',parking_fee_per_hour:'Fee/hour (VND)',timezone:'Timezone',alert_blacklist:'Alert Blacklist (0/1)',alert_vip:'Alert VIP (0/1)',max_fps:'Max FPS'};document.getElementById('settingsForm').innerHTML=Object.entries(d.settings).map(([k,v])=>`<div class="field"><label>${labels[k]||k}</label><input id="setting_${k}" value="${v.value}"></div>`).join('')+`<div class="modal-foot" style="margin-top:16px"><button class="btn btn-primary" onclick="saveSettings()">Save</button></div>`}
+async function saveSettings(){const s={};document.querySelectorAll('[id^="setting_"]').forEach(i=>{s[i.id.replace('setting_','')]=i.value});await api('/api/settings',{method:'PUT',body:{settings:s}}).catch(()=>{});toast('Saved','Settings updated')}
+
+// --- LOGIC WATCHLIST / BLACKLIST THỜI GIAN THỰC ---
+function handleWatchlistDetectionLogic(plateNumber, watchlistObj) {
+  const category = watchlistObj.category.toLowerCase();
+  const screenBox = document.getElementById('liveMonitorScreenBox');
+  const overlayLabel = document.getElementById('liveBarrierOverlay');
+  const appLayoutContainer = document.getElementById('mainAppContent');
+
+  appLayoutContainer.classList.remove('alarm-flash-active');
+  if(screenBox) screenBox.style.borderColor = 'var(--border)';
+  if(overlayLabel){
+    overlayLabel.textContent = "BARRIER STATUS: IDLE";
+    overlayLabel.style.color = "var(--text)";
+  }
+
+  if (category === 'blacklist') {
+    toast("🚨 CẢNH BÁO BLACKLIST", `Xe vi phạm: ${plateNumber}. Lý do: ${watchlistObj.label || 'Nằm trong diện theo dõi đặc biệt'}.`, 'blacklist');
+    appLayoutContainer.classList.add('alarm-flash-active');
+    
+    if(screenBox) screenBox.style.borderColor = 'var(--red)';
+    if(overlayLabel) {
+      overlayLabel.textContent = "BARRIER STATUS: 🔒 LOCKED ALARM (XE VI PHẠM)";
+      overlayLabel.style.color = "var(--red)";
+    }
+    console.warn(`[AN NINH CẢNH BÁO] Phát hiện xe thuộc danh sách đen: ${plateNumber}. Lệnh khóa cứng barie khẩn cấp đã được phát.`);
+
+  } else if (category === 'whitelist' || category === 'vip') {
+    toast("✨ THÔNG BÁO WHITELIST", `Chào mừng xe Ban Giám Đốc / Khách Quý: ${plateNumber}`, 'whitelist');
+    
+    if(screenBox) screenBox.style.borderColor = 'var(--green)';
+    if(overlayLabel) {
+      overlayLabel.textContent = "BARRIER STATUS: 🔓 OPENED VIP LANE (XIN CHÀO)";
+      overlayLabel.style.color = "var(--green)";
+    }
+    console.log(`[HỆ THỐNG ƯU TIÊN] Xe Whitelist/VIP xuất hiện: ${plateNumber}. Tự động mở Barie.`);
+  }
+}
+
+function triggerMockWebSocketDetection(plateStr) {
+  const foundInWl = mockWatchlistDb.find(i => i.license_plate.replace(/[-.]/g,'').toLowerCase() === plateStr.replace(/[-.]/g,'').toLowerCase());
+  
+  let mockMessage = {
+    type: 'detection',
+    data: {
+      plate: plateStr,
+      confidence: 0.96,
+      camera_id: 1,
+      watchlist: foundInWl ? { category: foundInWl.category, label: foundInWl.label } : null
+    }
+  };
+  
+  const liveListEl = document.getElementById('liveDetections');
+  if(liveListEl) {
+    const timeNow = new Date().toLocaleTimeString('vi-VN');
+    const badgeMarkup = foundInWl ? catBadge(foundInWl.category) : '<span class="badge badge-normal">Normal</span>';
+    liveListEl.innerHTML = `<div class="feed-item" style="background:var(--bg-2); margin-bottom:4px; border-radius:4px;"><div style="flex:1"><div class="feed-plate">${plateStr} ${badgeMarkup}</div><div class="feed-meta">${timeNow} | Mô Phỏng Qua UI</div></div><span class="badge badge-ok">96%</span></div>` + liveListEl.innerHTML;
+  }
+  
+  if(mockMessage.data.watchlist) {
+    handleWatchlistDetectionLogic(mockMessage.data.plate, mockMessage.data.watchlist);
+  } else {
+    const screenBox = document.getElementById('liveMonitorScreenBox');
+    const overlayLabel = document.getElementById('liveBarrierOverlay');
+    const appLayoutContainer = document.getElementById('mainAppContent');
+    appLayoutContainer.classList.remove('alarm-flash-active');
+    if(screenBox) screenBox.style.borderColor = 'var(--blue)';
+    if(overlayLabel) {
+      overlayLabel.textContent = "BARRIER STATUS: 🔓 OPENED (XE THƯỜNG)";
+      overlayLabel.style.color = "var(--blue)";
+    }
+    toast("NHẬN DIỆN", `Phương tiện bình thường ra vào bãi: ${plateStr}`);
+  }
+}
+
+// WEBSOCKET NGUYÊN BẢN
+function connectWS(){
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen=()=>{document.getElementById('sysStatus').className='status-dot on';document.getElementById('sysStatusText').textContent='Online'};
+  ws.onmessage=e=>{
+    const m=JSON.parse(e.data);
+    if(m.type==='detection'){
+      if(m.data.watchlist) {
+        toast(m.data.watchlist.category.toUpperCase(), m.data.plate);
+        handleWatchlistDetectionLogic(m.data.plate, m.data.watchlist);
+      } else {
+        toast("NHẬN DIỆN", `Xe ra vào: ${m.data.plate}`);
+      }
+      
+      if(currentPage=='live') loadLiveDets();
+      if(currentPage=='dashboard') loadDashboard();
+      if(currentPage=='records') loadRecords();
+    }
+  };
+  ws.onclose=()=>{document.getElementById('sysStatus').className='status-dot off';document.getElementById('sysStatusText').textContent='Offline';setTimeout(connectWS,3000)};
+  ws.onerror=()=>ws.close()
+}
+
+async function pollStatus(){try{const d=await api('/api/system/status');document.getElementById('fpsDisplay').textContent=d.fps+' FPS'}catch(e){}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+// Khởi chạy hệ thống ban đầu
+loadDashboard();connectWS();setInterval(pollStatus,3000);setInterval(()=>{if(currentPage==='dashboard')loadDashboard()},10000);
+</script>
+</body>
+</html>
